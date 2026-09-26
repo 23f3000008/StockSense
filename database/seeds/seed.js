@@ -33,17 +33,19 @@ async function seedDatabase() {
     // 2. Create Users
     console.log('[2/7] Creating default users...');
     const manager = await User.create({
+      loginId: 'manager',
       name: 'Sarah Connor',
       email: 'manager@stocksense.com',
-      password: 'Password123',
+      password: 'Password123!',
       role: 'inventory_manager',
       phone: '+1 (555) 019-2834',
     });
 
     const staff = await User.create({
+      loginId: 'staffuser',
       name: 'Alex Mercer',
       email: 'staff@stocksense.com',
-      password: 'Password123',
+      password: 'Password123!',
       role: 'warehouse_staff',
       phone: '+1 (555) 019-5847',
     });
@@ -875,8 +877,8 @@ async function seedDatabase() {
     console.log('[7/7] Database Seeding Completed Successfully! 🚀');
     console.log('--------------------------------------------------');
     console.log('Sample Credentials:');
-    console.log('  Manager: manager@stocksense.com  / Password123');
-    console.log('  Staff:   staff@stocksense.com    / Password123');
+    console.log('  Manager: Login ID: manager   / email: manager@stocksense.com  / Password: Password123!');
+    console.log('  Staff:   Login ID: staffuser / email: staff@stocksense.com    / Password: Password123!');
     console.log('Warehouses:');
     console.log(`  - ${mainWh.name} (${mainWh.code})`);
     console.log(`  - ${prodWh.name} (${prodWh.code})`);

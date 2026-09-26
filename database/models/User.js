@@ -8,6 +8,14 @@ const userSchema = new mongoose.Schema(
       required: [true, 'User name is required'],
       trim: true,
     },
+    loginId: {
+      type: String,
+      unique: true,
+      sparse: true,
+      lowercase: true,
+      trim: true,
+      index: true,
+    },
     email: {
       type: String,
       required: [true, 'Email is required'],

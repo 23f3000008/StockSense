@@ -6,53 +6,157 @@ const { generateOtp, sendOtpEmail } = require('../utils/otpAndEmail');
 const OTP_EXPIRE_MINUTES = Number(process.env.OTP_EXPIRE_MINUTES) || 10;
 
 function publicUser(user) {
-  return { id: user._id, name: user.name, email: user.email, role: user.role };
+  return {
+    id: user._id,
+    loginId: user.loginId || '',
+    name: user.name,
+    email: user.email,
+    role: user.role,
+  };
 }
 
 // POST /api/auth/signup
+// Wireframe specifications:
+// 1. login ID should be unique and must be in between 6-12 characters
+// 2. Email Id should not be a duplicate in database
+// 3. Password must contain small case, large case, special character, length > 8 characters
+// 4. Re-enter password verification
 const signup = asyncHandler(async (req, res) => {
-  const { name, email, password } = req.body;
-  if (!name || !email || !password) {
+  const {
+    loginId: rawLoginId,
+    loginID,
+    email: rawEmail,
+    emailId,
+    password,
+    reEnterPassword,
+    confirmPassword,
+    name: rawName,
+  } = req.body;
+
+  const loginId = (rawLoginId || loginID || '').trim();
+  const email = (rawEmail || emailId || '').trim();
+  const rePassword = reEnterPassword !== undefined ? reEnterPassword : confirmPassword;
+
+  // 1. Validate Login ID (6-12 characters, unique, alphanumeric/underscore)
+  if (!loginId) {
     res.status(400);
-    throw new Error('Name, email and password are all required.');
+    throw new Error('Login ID is required.');
   }
-  if (password.length < 8) {
+  if (loginId.length < 6 || loginId.length > 12) {
     res.status(400);
-    throw new Error('Password must be at least 8 characters.');
+    throw new Error('Login ID must be between 6 and 12 characters.');
+  }
+  if (!/^[a-zA-Z0-9_]+$/.test(loginId)) {
+    res.status(400);
+    throw new Error('Login ID can only contain letters, numbers, and underscores.');
   }
 
-  const existing = await User.findOne({ email: email.toLowerCase() });
-  if (existing) {
+  const existingLogin = await User.findOne({ loginId: loginId.toLowerCase() });
+  if (existingLogin) {
     res.status(409);
-    throw new Error('An account with this email already exists.');
+    throw new Error('Login ID is already taken. Please choose another.');
   }
 
-  const user = await User.create({ name, email, password });
+  // 2. Validate Email ID (valid format, unique)
+  if (!email) {
+    res.status(400);
+    throw new Error('Email ID is required.');
+  }
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    res.status(400);
+    throw new Error('Please enter a valid email address.');
+  }
+
+  const existingEmail = await User.findOne({ email: email.toLowerCase() });
+  if (existingEmail) {
+    res.status(409);
+    throw new Error('Email ID already exists in the system.');
+  }
+
+  // 3. Validate Password (>8 characters, small case, large case, special character)
+  if (!password) {
+    res.status(400);
+    throw new Error('Password is required.');
+  }
+  if (password.length <= 8) {
+    res.status(400);
+    throw new Error('Password length must be more than 8 characters.');
+  }
+  if (!/[a-z]/.test(password)) {
+    res.status(400);
+    throw new Error('Password must contain at least one lowercase letter.');
+  }
+  if (!/[A-Z]/.test(password)) {
+    res.status(400);
+    throw new Error('Password must contain at least one uppercase letter.');
+  }
+  if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~`]/.test(password)) {
+    res.status(400);
+    throw new Error('Password must contain at least one special character.');
+  }
+
+  // Check re-entered password if provided
+  if (rePassword !== undefined && password !== rePassword) {
+    res.status(400);
+    throw new Error('Passwords do not match.');
+  }
+
+  const name = rawName && rawName.trim() ? rawName.trim() : loginId;
+
+  const user = await User.create({
+    loginId: loginId.toLowerCase(),
+    name,
+    email: email.toLowerCase(),
+    password,
+    role: req.body.role || 'inventory_manager',
+  });
+
   const token = generateAuthToken(user._id);
   setAuthCookie(res, token);
 
-  res.status(201).json({ success: true, token, user: publicUser(user) });
+  res.status(201).json({
+    success: true,
+    message: 'User registered successfully.',
+    token,
+    user: publicUser(user),
+  });
 });
 
 // POST /api/auth/login
+// Wireframe specifications:
+// - Check for Login Credentials (by Login Id or Email)
+// - Match creds, and allow to login a user
+// - If Creds does not match throw error msg: 'Invalid Login Id or Password'
 const login = asyncHandler(async (req, res) => {
-  const { email, password } = req.body;
-  if (!email || !password) {
-    res.status(400);
-    throw new Error('Email and password are required.');
+  const { loginId: rawLoginId, loginID, email: rawEmail, identifier: rawIdentifier, password } = req.body;
+  const identifier = (rawLoginId || loginID || rawEmail || rawIdentifier || '').trim().toLowerCase();
+
+  if (!identifier || !password) {
+    res.status(401);
+    throw new Error('Invalid Login Id or Password');
   }
 
-  const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
+  // Find user by either loginId or email
+  const user = await User.findOne({
+    $or: [{ loginId: identifier }, { email: identifier }],
+  }).select('+password');
+
   const valid = user && (await user.matchPassword(password));
   if (!valid) {
     res.status(401);
-    throw new Error('Invalid email or password.');
+    throw new Error('Invalid Login Id or Password');
   }
 
   const token = generateAuthToken(user._id);
   setAuthCookie(res, token);
 
-  res.status(200).json({ success: true, token, user: publicUser(user) });
+  res.status(200).json({
+    success: true,
+    message: 'Login successful.',
+    token,
+    user: publicUser(user),
+  });
 });
 
 // POST /api/auth/logout
