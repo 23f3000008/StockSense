@@ -9,6 +9,7 @@ import Deliveries from './pages/Deliveries';
 import StockView from './pages/StockView';
 import MoveHistory from './pages/MoveHistory';
 import Warehouses from './pages/Warehouses';
+import Locations from './pages/Locations';
 import Adjustments from './pages/Adjustments';
 import Transfers from './pages/Transfers';
 import AuthPage from './pages/AuthPage';
@@ -80,7 +81,7 @@ export default function App() {
           <Route path="/stock" element={<StockView />} />
           <Route path="/move-history" element={<MoveHistory />} />
           <Route path="/settings/warehouses" element={<Warehouses />} />
-          <Route path="/settings/locations" element={<Warehouses />} />
+          <Route path="/settings/locations" element={<Locations />} />
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
