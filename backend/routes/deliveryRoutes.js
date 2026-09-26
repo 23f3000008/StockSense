@@ -4,7 +4,10 @@ const {
   getDeliveries,
   getDeliveryById,
   createDelivery,
+  updateDelivery,
+  updateDeliveryStatus,
   validateDelivery,
+  deleteDelivery,
 } = require('../controllers/deliveryController');
 const { protect } = require('../middleware/authMiddleware');
 
@@ -13,7 +16,12 @@ router.route('/')
   .post(protect, createDelivery);
 
 router.route('/:id')
-  .get(protect, getDeliveryById);
+  .get(protect, getDeliveryById)
+  .put(protect, updateDelivery)
+  .delete(protect, deleteDelivery);
+
+router.route('/:id/status')
+  .patch(protect, updateDeliveryStatus);
 
 router.route('/:id/validate')
   .post(protect, validateDelivery);

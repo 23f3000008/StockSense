@@ -81,6 +81,21 @@ const receiptSchema = new mongoose.Schema(
       default: Date.now,
       index: true,
     },
+    from: {
+      type: String,
+      default: 'vendor',
+      trim: true,
+    },
+    to: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    contact: {
+      type: String,
+      default: '',
+      trim: true,
+    },
     notes: {
       type: String,
       default: '',
@@ -100,7 +115,31 @@ const receiptSchema = new mongoose.Schema(
       default: null,
     },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  }
 );
+
+// Virtual: reference -> receiptNumber
+receiptSchema.virtual('reference').get(function () {
+  return this.receiptNumber;
+});
+
+// Virtual helper for 'To' location string (e.g. WH/Stock1)
+receiptSchema.virtual('toFormatted').get(function () {
+  if (this.to) return this.to;
+  const wh = this.warehouseName || 'WH';
+  const destLoc = (this.items && this.items.length > 0 && this.items[0].destinationLocation)
+    ? this.items[0].destinationLocation
+    : 'Stock1';
+  return `${wh}/${destLoc}`;
+});
+
+// Virtual helper for contact display
+receiptSchema.virtual('contactDisplay').get(function () {
+  return this.contact || this.supplierName || '';
+});
 
 module.exports = mongoose.model('Receipt', receiptSchema);

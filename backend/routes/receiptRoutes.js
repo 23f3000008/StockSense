@@ -4,7 +4,10 @@ const {
   getReceipts,
   getReceiptById,
   createReceipt,
+  updateReceipt,
+  updateReceiptStatus,
   validateReceipt,
+  deleteReceipt,
 } = require('../controllers/receiptController');
 const { protect } = require('../middleware/authMiddleware');
 
@@ -13,7 +16,12 @@ router.route('/')
   .post(protect, createReceipt);
 
 router.route('/:id')
-  .get(protect, getReceiptById);
+  .get(protect, getReceiptById)
+  .put(protect, updateReceipt)
+  .delete(protect, deleteReceipt);
+
+router.route('/:id/status')
+  .patch(protect, updateReceiptStatus);
 
 router.route('/:id/validate')
   .post(protect, validateReceipt);

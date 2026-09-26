@@ -36,7 +36,7 @@ const getDashboardKPIs = asyncHandler(async (req, res) => {
     recentLedger,
   ] = await Promise.all([
     // Receipts
-    Receipt.countDocuments({ status: { $nin: ['Done', 'Canceled'] } }),
+    Receipt.countDocuments({ status: { $in: ['Ready', 'Waiting'] } }),
     Receipt.countDocuments({
       status: { $nin: ['Done', 'Canceled'] },
       scheduledDate: { $lt: startOfToday },
@@ -48,7 +48,7 @@ const getDashboardKPIs = asyncHandler(async (req, res) => {
     Receipt.countDocuments(),
 
     // Deliveries
-    DeliveryOrder.countDocuments({ status: { $nin: ['Done', 'Canceled'] } }),
+    DeliveryOrder.countDocuments({ status: { $in: ['Ready', 'Waiting'] } }),
     DeliveryOrder.countDocuments({
       status: { $nin: ['Done', 'Canceled'] },
       scheduledDate: { $lt: startOfToday },
@@ -89,7 +89,7 @@ const getDashboardKPIs = asyncHandler(async (req, res) => {
           title: 'Receipt',
           toReceive: receiptsToReceive,
           late: receiptsLate,
-          operations: receiptsToReceive,
+          operations: receiptsTotal,
           upcomingOperations: receiptsUpcoming,
           totalAllTime: receiptsTotal,
           rules: {
@@ -102,7 +102,7 @@ const getDashboardKPIs = asyncHandler(async (req, res) => {
           toDeliver: deliveriesToDeliver,
           late: deliveriesLate,
           waiting: deliveriesWaiting,
-          operations: deliveriesToDeliver,
+          operations: deliveriesTotal,
           upcomingOperations: deliveriesUpcoming,
           totalAllTime: deliveriesTotal,
           rules: {

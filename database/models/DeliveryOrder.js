@@ -118,8 +118,47 @@ const deliveryOrderSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    from: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    to: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    contact: {
+      type: String,
+      default: '',
+      trim: true,
+    },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  }
 );
+
+// Virtual: reference -> orderNumber
+deliveryOrderSchema.virtual('reference').get(function () {
+  return this.orderNumber;
+});
+
+// Virtual helper for 'From' location string (e.g. WH/Stock1)
+deliveryOrderSchema.virtual('fromFormatted').get(function () {
+  if (this.from) return this.from;
+  const wh = this.warehouseName || 'WH';
+  const srcLoc = (this.items && this.items.length > 0 && this.items[0].sourceLocation)
+    ? this.items[0].sourceLocation
+    : 'Stock1';
+  return `${wh}/${srcLoc}`;
+});
+
+// Virtual helper for contact display
+deliveryOrderSchema.virtual('contactDisplay').get(function () {
+  return this.contact || this.customerName || '';
+});
 
 module.exports = mongoose.model('DeliveryOrder', deliveryOrderSchema);

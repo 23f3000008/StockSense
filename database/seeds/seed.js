@@ -52,7 +52,7 @@ async function seedDatabase() {
     console.log('[3/7] Creating warehouses and storage locations...');
     const mainWh = await Warehouse.create({
       name: 'Main Central Warehouse',
-      code: 'WH-MAIN',
+      code: 'WH',
       address: {
         street: '100 Logistics Blvd',
         city: 'Chicago',
@@ -63,6 +63,8 @@ async function seedDatabase() {
       contactPerson: 'Sarah Connor',
       contactPhone: '+1 (555) 019-2834',
       locations: [
+        { name: 'Stock1', code: 'LOC-STK-1', type: 'rack', capacityUnits: 5000 },
+        { name: 'Stock2', code: 'LOC-STK-2', type: 'rack', capacityUnits: 5000 },
         { name: 'Receiving Dock', code: 'LOC-DOCK-1', type: 'dock', capacityUnits: 5000 },
         { name: 'Rack A1', code: 'LOC-RACK-A1', type: 'rack', capacityUnits: 1500 },
         { name: 'Rack A2', code: 'LOC-RACK-A2', type: 'rack', capacityUnits: 1500 },
@@ -225,8 +227,8 @@ async function seedDatabase() {
         stockByLocation: [
           {
             warehouse: mainWh._id,
-            warehouseName: mainWh.name,
-            locationName: 'Main Storage',
+            warehouseName: 'WH',
+            locationName: 'Stock1',
             quantity: 50,
           },
         ],
@@ -244,8 +246,8 @@ async function seedDatabase() {
         stockByLocation: [
           {
             warehouse: mainWh._id,
-            warehouseName: mainWh.name,
-            locationName: 'Main Storage',
+            warehouseName: 'WH',
+            locationName: 'Stock2',
             quantity: 50,
           },
         ],
@@ -268,36 +270,12 @@ async function seedDatabase() {
     // 5. Operations: Receipts, Transfers, Deliveries, Adjustments
     console.log('[5/7] Creating inventory operational transactions...');
 
-    // Receipt 1 (Done): Received 100 kg Steel from Vendor
+    // Receipt 1 (Ready): WH/IN/0001 matching wireframe Row 1
     const rec1 = await Receipt.create({
-      receiptNumber: 'REC-2026-001',
-      supplierName: 'Apex Steel Industries Ltd',
-      supplierContact: 'orders@apexsteel.com',
-      purchaseOrderRef: 'PO-99401',
-      warehouse: mainWh._id,
-      warehouseName: mainWh.name,
-      status: 'Done',
-      notes: 'Initial batch of raw rebar steel delivered on pallet #3.',
-      items: [
-        {
-          product: steelProduct._id,
-          productName: steelProduct.name,
-          sku: steelProduct.sku,
-          uom: 'kg',
-          quantityExpected: 100,
-          quantityReceived: 100,
-          unitPrice: 4.5,
-          destinationLocation: 'Receiving Dock',
-        },
-      ],
-      validatedAt: new Date(Date.now() - 3 * 24 * 3600 * 1000),
-      validatedBy: manager._id,
-      createdBy: manager._id,
-    });
-
-    // Receipt 2 (Ready/Pending): WH/IN/0001 matching wireframe
-    const rec2 = await Receipt.create({
       receiptNumber: 'WH/IN/0001',
+      from: 'vendor',
+      to: 'WH/Stock1',
+      contact: 'Azure Interior',
       supplierName: 'Azure Interior',
       supplierContact: 'orders@azureinterior.com',
       purchaseOrderRef: 'PO-99445',
@@ -305,7 +283,7 @@ async function seedDatabase() {
       warehouseName: 'WH',
       status: 'Ready',
       scheduledDate: new Date(Date.now() + 2 * 24 * 3600 * 1000),
-      notes: 'Inbound shipment from Azure Interior.',
+      notes: 'Inbound shipment 01 from Azure Interior.',
       items: [
         {
           product: deskProduct._id,
@@ -321,15 +299,47 @@ async function seedDatabase() {
       createdBy: manager._id,
     });
 
+    // Receipt 2 (Ready): WH/IN/0002 matching wireframe Row 2
+    const rec2 = await Receipt.create({
+      receiptNumber: 'WH/IN/0002',
+      from: 'vendor',
+      to: 'WH/Stock1',
+      contact: 'Azure Interior',
+      supplierName: 'Azure Interior',
+      supplierContact: 'orders@azureinterior.com',
+      purchaseOrderRef: 'PO-99446',
+      warehouse: mainWh._id,
+      warehouseName: 'WH',
+      status: 'Ready',
+      scheduledDate: new Date(Date.now() + 3 * 24 * 3600 * 1000),
+      notes: 'Inbound shipment 02 from Azure Interior.',
+      items: [
+        {
+          product: deskProduct._id,
+          productName: deskProduct.name,
+          sku: deskProduct.sku,
+          uom: 'pcs',
+          quantityExpected: 25,
+          quantityReceived: 0,
+          unitPrice: 3000,
+          destinationLocation: 'Stock1',
+        },
+      ],
+      createdBy: manager._id,
+    });
+
     // Receipt 3 (Late: scheduledDate in past)
     const rec3 = await Receipt.create({
-      receiptNumber: 'REC-2026-003',
+      receiptNumber: 'WH/IN/0003',
+      from: 'vendor',
+      to: 'WH/Stock1',
+      contact: 'Titan Fasteners Inc',
       supplierName: 'Titan Fasteners Inc',
       supplierContact: 'sales@titanfasteners.com',
       warehouse: mainWh._id,
-      warehouseName: mainWh.name,
+      warehouseName: 'WH',
       status: 'Ready',
-      scheduledDate: new Date(Date.now() - 2 * 24 * 3600 * 1000), // Late!
+      scheduledDate: new Date(Date.now() - 2 * 24 * 3600 * 1000), // Late! (1 Late)
       notes: 'Delayed hardware shipment awaiting customs clearance.',
       items: [
         {
@@ -340,7 +350,7 @@ async function seedDatabase() {
           quantityExpected: 50,
           quantityReceived: 0,
           unitPrice: 12.0,
-          destinationLocation: 'Receiving Dock',
+          destinationLocation: 'Stock1',
         },
       ],
       createdBy: manager._id,
@@ -348,10 +358,13 @@ async function seedDatabase() {
 
     // Receipt 4 (Waiting for dock assignment)
     const rec4 = await Receipt.create({
-      receiptNumber: 'REC-2026-004',
+      receiptNumber: 'WH/IN/0004',
+      from: 'vendor',
+      to: 'WH/Stock1',
+      contact: 'Apex Steel Industries Ltd',
       supplierName: 'Apex Steel Industries Ltd',
       warehouse: prodWh._id,
-      warehouseName: prodWh.name,
+      warehouseName: 'WH',
       status: 'Waiting',
       scheduledDate: new Date(Date.now() + 1 * 24 * 3600 * 1000),
       notes: 'Scheduled delivery for factory rebar reinforcement.',
@@ -364,7 +377,7 @@ async function seedDatabase() {
           quantityExpected: 60,
           quantityReceived: 0,
           unitPrice: 4.5,
-          destinationLocation: 'Production Floor',
+          destinationLocation: 'Stock1',
         },
       ],
       createdBy: manager._id,
@@ -372,12 +385,15 @@ async function seedDatabase() {
 
     // Receipt 5 (Draft)
     const rec5 = await Receipt.create({
-      receiptNumber: 'REC-2026-005',
+      receiptNumber: 'WH/IN/0005',
+      from: 'vendor',
+      to: 'WH/Stock1',
+      contact: 'Pacific Eco Packaging',
       supplierName: 'Pacific Eco Packaging',
       warehouse: mainWh._id,
-      warehouseName: mainWh.name,
+      warehouseName: 'WH',
       status: 'Draft',
-      scheduledDate: new Date(Date.now() + 3 * 24 * 3600 * 1000),
+      scheduledDate: new Date(Date.now() + 4 * 24 * 3600 * 1000),
       items: [
         {
           product: deskProduct._id,
@@ -393,26 +409,32 @@ async function seedDatabase() {
       createdBy: manager._id,
     });
 
-    // Receipt 6 (Done)
+    // Receipt 6 (Done: Received 100 kg Steel from Vendor)
     const rec6 = await Receipt.create({
-      receiptNumber: 'REC-2026-006',
-      supplierName: 'Modern Office Systems',
+      receiptNumber: 'WH/IN/0006',
+      from: 'vendor',
+      to: 'WH/Receiving Dock',
+      contact: 'Apex Steel Industries Ltd',
+      supplierName: 'Apex Steel Industries Ltd',
+      supplierContact: 'orders@apexsteel.com',
+      purchaseOrderRef: 'PO-99401',
       warehouse: mainWh._id,
-      warehouseName: mainWh.name,
+      warehouseName: 'WH',
       status: 'Done',
-      scheduledDate: new Date(Date.now() - 4 * 24 * 3600 * 1000),
-      validatedAt: new Date(Date.now() - 4 * 24 * 3600 * 1000),
+      scheduledDate: new Date(Date.now() - 3 * 24 * 3600 * 1000),
+      validatedAt: new Date(Date.now() - 3 * 24 * 3600 * 1000),
       validatedBy: manager._id,
+      notes: 'Initial batch of raw rebar steel delivered on pallet #3.',
       items: [
         {
-          product: chairProduct._id,
-          productName: chairProduct.name,
-          sku: chairProduct.sku,
-          uom: 'pcs',
-          quantityExpected: 15,
-          quantityReceived: 15,
-          unitPrice: 85,
-          destinationLocation: 'Rack A1',
+          product: steelProduct._id,
+          productName: steelProduct.name,
+          sku: steelProduct.sku,
+          uom: 'kg',
+          quantityExpected: 100,
+          quantityReceived: 100,
+          unitPrice: 4.5,
+          destinationLocation: 'Receiving Dock',
         },
       ],
       createdBy: manager._id,
@@ -468,12 +490,15 @@ async function seedDatabase() {
 
     // Delivery Order 1 (Done): Deliver 20 kg Steel to Customer
     const del1 = await DeliveryOrder.create({
-      orderNumber: 'DEL-2026-001',
+      orderNumber: 'WH/OUT/0001',
+      from: 'WH/Receiving Dock',
+      to: 'Metro Urban Contractors',
+      contact: 'Metro Urban Contractors',
       customerName: 'Metro Urban Contractors',
       shippingAddress: '742 Evergreen Terrace, Springfield',
       salesOrderRef: 'SO-10822',
       warehouse: mainWh._id,
-      warehouseName: mainWh.name,
+      warehouseName: 'WH',
       status: 'Done',
       pickingStatus: 'Fully Picked',
       packingStatus: 'Packed',
@@ -500,6 +525,9 @@ async function seedDatabase() {
     // Delivery Order 2 (Ready/Pending): WH/OUT/0002 matching wireframe
     const del2 = await DeliveryOrder.create({
       orderNumber: 'WH/OUT/0002',
+      from: 'WH/Stock1',
+      to: 'Azure Interior',
+      contact: 'Azure Interior',
       customerName: 'Azure Interior',
       shippingAddress: 'Azure Interior Showroom, Design District',
       salesOrderRef: 'SO-10850',
@@ -537,13 +565,16 @@ async function seedDatabase() {
 
     // Delivery Order 3 (Late: scheduledDate in past)
     const del3 = await DeliveryOrder.create({
-      orderNumber: 'DEL-2026-003',
+      orderNumber: 'WH/OUT/0003',
+      from: 'WH/Receiving Dock',
+      to: 'Metro Urban Contractors',
+      contact: 'Metro Urban Contractors',
       customerName: 'Metro Urban Contractors',
       shippingAddress: '742 Evergreen Terrace, Springfield',
       warehouse: mainWh._id,
-      warehouseName: mainWh.name,
+      warehouseName: 'WH',
       status: 'Ready',
-      scheduledDate: new Date(Date.now() - 2 * 24 * 3600 * 1000), // Late!
+      scheduledDate: new Date(Date.now() - 2 * 24 * 3600 * 1000), // Late! (1 Late)
       items: [
         {
           product: steelProduct._id,
@@ -561,11 +592,14 @@ async function seedDatabase() {
 
     // Delivery Order 4 (Waiting for stocks)
     const del4 = await DeliveryOrder.create({
-      orderNumber: 'DEL-2026-004',
+      orderNumber: 'WH/OUT/0004',
+      from: 'WH/Rack A1',
+      to: 'FinTech Hub Offices',
+      contact: 'FinTech Hub Offices',
       customerName: 'FinTech Hub Offices',
       shippingAddress: '500 Tech Plaza, Floor 12, New York, NY',
       warehouse: mainWh._id,
-      warehouseName: mainWh.name,
+      warehouseName: 'WH',
       status: 'Waiting', // Waiting for stock!
       scheduledDate: new Date(Date.now() + 1 * 24 * 3600 * 1000),
       items: [
@@ -585,11 +619,14 @@ async function seedDatabase() {
 
     // Delivery Order 5 (Waiting for stocks)
     const del5 = await DeliveryOrder.create({
-      orderNumber: 'DEL-2026-005',
+      orderNumber: 'WH/OUT/0005',
+      from: 'WH/Shelf B1',
+      to: 'OmniCorp Logistics',
+      contact: 'OmniCorp Logistics',
       customerName: 'OmniCorp Logistics',
       shippingAddress: '100 Industrial Blvd',
       warehouse: mainWh._id,
-      warehouseName: mainWh.name,
+      warehouseName: 'WH',
       status: 'Waiting', // Waiting for stock!
       scheduledDate: new Date(Date.now() + 2 * 24 * 3600 * 1000),
       items: [
@@ -609,10 +646,13 @@ async function seedDatabase() {
 
     // Delivery Order 6 (Done)
     const del6 = await DeliveryOrder.create({
-      orderNumber: 'DEL-2026-006',
+      orderNumber: 'WH/OUT/0006',
+      from: 'WH/Stock1',
+      to: 'Apex Architecture',
+      contact: 'Apex Architecture',
       customerName: 'Apex Architecture',
       warehouse: mainWh._id,
-      warehouseName: mainWh.name,
+      warehouseName: 'WH',
       status: 'Done',
       scheduledDate: new Date(Date.now() - 5 * 24 * 3600 * 1000),
       validatedAt: new Date(Date.now() - 5 * 24 * 3600 * 1000),
@@ -626,7 +666,7 @@ async function seedDatabase() {
           quantityOrdered: 5,
           quantityPicked: 5,
           quantityPacked: 5,
-          sourceLocation: 'Main Storage',
+          sourceLocation: 'Stock1',
         },
       ],
       createdBy: manager._id,
@@ -658,8 +698,11 @@ async function seedDatabase() {
     const ledgerEntries = [
       {
         transactionType: 'Receipt',
-        referenceNumber: rec1.receiptNumber,
-        referenceDocId: rec1._id,
+        referenceNumber: rec6.receiptNumber,
+        referenceDocId: rec6._id,
+        contact: 'Apex Steel Industries Ltd',
+        status: 'Done',
+        direction: 'IN',
         product: steelProduct._id,
         productName: steelProduct.name,
         sku: steelProduct.sku,
@@ -680,6 +723,9 @@ async function seedDatabase() {
         transactionType: 'Internal Transfer',
         referenceNumber: trf1.transferNumber,
         referenceDocId: trf1._id,
+        contact: 'Internal Warehouse Movement',
+        status: 'Done',
+        direction: 'INTERNAL',
         product: steelProduct._id,
         productName: steelProduct.name,
         sku: steelProduct.sku,
@@ -700,6 +746,9 @@ async function seedDatabase() {
         transactionType: 'Delivery',
         referenceNumber: del1.orderNumber,
         referenceDocId: del1._id,
+        contact: 'Metro Urban Contractors',
+        status: 'Done',
+        direction: 'OUT',
         product: steelProduct._id,
         productName: steelProduct.name,
         sku: steelProduct.sku,
@@ -715,6 +764,52 @@ async function seedDatabase() {
         userId: staff._id,
         notes: 'Step 3: Deliver finished goods (Stock for frames: -20)',
         timestamp: new Date(Date.now() - 1 * 24 * 3600 * 1000),
+      },
+      {
+        transactionType: 'Receipt',
+        referenceNumber: rec1.receiptNumber,
+        referenceDocId: rec1._id,
+        contact: 'Azure Interior',
+        status: 'Ready',
+        direction: 'IN',
+        product: deskProduct._id,
+        productName: deskProduct.name,
+        sku: deskProduct.sku,
+        category: deskProduct.category,
+        uom: 'pcs',
+        sourceWarehouse: 'Azure Interior',
+        sourceLocation: 'Vendor Facility',
+        destinationWarehouse: mainWh.name,
+        destinationLocation: 'Stock1',
+        quantityDelta: 50,
+        balanceAfterTransaction: 50,
+        performedBy: manager.name,
+        userId: manager._id,
+        notes: 'WH/IN/0001 inbound commercial furniture delivery.',
+        timestamp: new Date(Date.now() - 18 * 3600 * 1000),
+      },
+      {
+        transactionType: 'Delivery',
+        referenceNumber: del2.orderNumber,
+        referenceDocId: del2._id,
+        contact: 'Azure Interior',
+        status: 'Ready',
+        direction: 'OUT',
+        product: deskProduct._id,
+        productName: deskProduct.name,
+        sku: deskProduct.sku,
+        category: deskProduct.category,
+        uom: 'pcs',
+        sourceWarehouse: mainWh.name,
+        sourceLocation: 'Stock1',
+        destinationWarehouse: 'Azure Interior Showroom',
+        destinationLocation: 'Commercial Site',
+        quantityDelta: -5,
+        balanceAfterTransaction: 45,
+        performedBy: manager.name,
+        userId: manager._id,
+        notes: 'WH/OUT/0002 outbound commercial dispatch.',
+        timestamp: new Date(Date.now() - 6 * 3600 * 1000),
       },
       {
         transactionType: 'Adjustment',

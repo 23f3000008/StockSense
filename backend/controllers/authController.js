@@ -31,7 +31,7 @@ const signup = asyncHandler(async (req, res) => {
   const token = generateAuthToken(user._id);
   setAuthCookie(res, token);
 
-  res.status(201).json({ success: true, user: publicUser(user) });
+  res.status(201).json({ success: true, token, user: publicUser(user) });
 });
 
 // POST /api/auth/login
@@ -52,7 +52,7 @@ const login = asyncHandler(async (req, res) => {
   const token = generateAuthToken(user._id);
   setAuthCookie(res, token);
 
-  res.status(200).json({ success: true, user: publicUser(user) });
+  res.status(200).json({ success: true, token, user: publicUser(user) });
 });
 
 // POST /api/auth/logout
