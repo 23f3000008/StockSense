@@ -1,0 +1,16 @@
+{
+  "name": "stocksense-database",
+  "version": "1.0.0",
+  "description": "StockSense MongoDB Database Layer - Schemas, Models, Relations & Seed Engine",
+  "main": "index.js",
+  "scripts": {
+    "test:connection": "node test-connection.js",
+    "seed": "node seeds/seed.js",
+    "seed:reset": "node seeds/seed.js --reset"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.4.5",
+    "mongoose": "^8.3.1"
+  }
+}
