@@ -1,0 +1,2 @@
+import express from 'express'; import Warehouse from '../models/Warehouse.js'; import {auth} from '../middleware/auth.js';
+const router=express.Router();router.use(auth);router.get('/',async(req,res)=>res.json(await Warehouse.find().sort({name:1})));router.post('/',async(req,res)=>{try{res.status(201).json(await Warehouse.create(req.body));}catch(e){res.status(400).json({message:e.code===11000?'Warehouse code already exists':e.message});}});router.put('/:id',async(req,res)=>res.json(await Warehouse.findByIdAndUpdate(req.params.id,req.body,{new:true})));export default router;

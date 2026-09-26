@@ -1,0 +1,3 @@
+import mongoose from 'mongoose';
+const schema=new mongoose.Schema({product:{type:mongoose.Schema.Types.ObjectId,ref:'Product',required:true},warehouse:{type:mongoose.Schema.Types.ObjectId,ref:'Warehouse',required:true},operation:{type:mongoose.Schema.Types.ObjectId,ref:'Operation'},type:{type:String,enum:['receipt','delivery','transfer-in','transfer-out','adjustment'],required:true},quantityChange:{type:Number,required:true},balanceAfter:{type:Number,required:true},note:String,createdBy:{type:mongoose.Schema.Types.ObjectId,ref:'User'}},{timestamps:true});
+export default mongoose.model('Ledger',schema);
