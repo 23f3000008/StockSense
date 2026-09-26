@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
+const morgan = require('morgan');
 const connectDB = require('./config/db');
 
 // Route Handlers
@@ -25,6 +26,9 @@ const clientOrigin = process.env.CLIENT_URL || 'http://localhost:5173';
 app.use(cors({ origin: clientOrigin, credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
+if (process.env.NODE_ENV !== 'test') {
+  app.use(morgan('dev'));
+}
 
 // StockSense Modular REST API Routes
 app.use('/api/auth', authRoutes);
