@@ -3,10 +3,16 @@
   "version": "1.0.0",
   "description": "StockSense Modular Inventory Management System (IMS)",
   "scripts": {
+    "dev": "concurrently \"npm run backend:dev\" \"npm run frontend:dev\"",
     "backend:dev": "npm --prefix backend run dev",
     "backend:start": "npm --prefix backend start",
+    "frontend:dev": "npm --prefix frontend run dev",
+    "frontend:build": "npm --prefix frontend run build",
     "database:test": "npm --prefix database run test:connection",
     "database:seed": "npm --prefix database run seed",
     "database:reset": "npm --prefix database run seed:reset"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
   }
 }
