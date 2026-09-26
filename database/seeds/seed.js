@@ -212,6 +212,44 @@ async function seedDatabase() {
           },
         ],
       },
+      {
+        name: 'Desk',
+        sku: 'FURN-DSK-001',
+        category: 'Office Furniture',
+        uom: 'pcs',
+        description: 'Standard wooden office workstation desk.',
+        minReorderLevel: 10,
+        reorderQuantity: 30,
+        costPrice: 3000,
+        sellingPrice: 4500,
+        stockByLocation: [
+          {
+            warehouse: mainWh._id,
+            warehouseName: mainWh.name,
+            locationName: 'Main Storage',
+            quantity: 50,
+          },
+        ],
+      },
+      {
+        name: 'Table',
+        sku: 'FURN-TBL-002',
+        category: 'Office Furniture',
+        uom: 'pcs',
+        description: 'Conference and meeting room table.',
+        minReorderLevel: 10,
+        reorderQuantity: 20,
+        costPrice: 3000,
+        sellingPrice: 4800,
+        stockByLocation: [
+          {
+            warehouse: mainWh._id,
+            warehouseName: mainWh.name,
+            locationName: 'Main Storage',
+            quantity: 50,
+          },
+        ],
+      },
     ];
 
     const createdProducts = [];
@@ -224,6 +262,8 @@ async function seedDatabase() {
     const steelProduct = createdProducts.find((p) => p.sku === 'RAW-STL-001');
     const chairProduct = createdProducts.find((p) => p.sku === 'FURN-CHR-004');
     const boltProduct = createdProducts.find((p) => p.sku === 'HRD-BLT-084');
+    const deskProduct = createdProducts.find((p) => p.sku === 'FURN-DSK-001');
+    const tableProduct = createdProducts.find((p) => p.sku === 'FURN-TBL-002');
 
     // 5. Operations: Receipts, Transfers, Deliveries, Adjustments
     console.log('[5/7] Creating inventory operational transactions...');
@@ -381,6 +421,16 @@ async function seedDatabase() {
           quantityPicked: 6,
           quantityPacked: 0,
           sourceLocation: 'Rack A1',
+        },
+        {
+          product: deskProduct._id,
+          productName: deskProduct.name,
+          sku: deskProduct.sku,
+          uom: 'pcs',
+          quantityOrdered: 5,
+          quantityPicked: 0,
+          quantityPacked: 0,
+          sourceLocation: 'Main Storage',
         },
       ],
       notes: 'Pack with protective corner guards.',

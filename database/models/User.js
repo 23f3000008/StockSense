@@ -43,6 +43,10 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    // OTP-based password reset
+    otpCodeHash: { type: String, select: false },
+    otpExpiresAt: { type: Date, select: false },
+    otpAttempts: { type: Number, default: 0, select: false },
   },
   { timestamps: true }
 );
@@ -60,4 +64,24 @@ userSchema.methods.matchPassword = async function (candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
+userSchema.methods.setOtp = async function (rawOtp, expiresInMinutes = 10) {
+  const salt = await bcrypt.genSalt(10);
+  this.otpCodeHash = await bcrypt.hash(rawOtp, salt);
+  this.otpExpiresAt = new Date(Date.now() + expiresInMinutes * 60 * 1000);
+  this.otpAttempts = 0;
+};
+
+userSchema.methods.verifyOtp = async function (rawOtp) {
+  if (!this.otpCodeHash || !this.otpExpiresAt) return false;
+  if (this.otpExpiresAt.getTime() < Date.now()) return false;
+  return bcrypt.compare(rawOtp, this.otpCodeHash);
+};
+
+userSchema.methods.clearOtp = function () {
+  this.otpCodeHash = undefined;
+  this.otpExpiresAt = undefined;
+  this.otpAttempts = 0;
+};
+
 module.exports = mongoose.model('User', userSchema);
+
