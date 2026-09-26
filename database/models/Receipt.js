@@ -76,6 +76,11 @@ const receiptSchema = new mongoose.Schema(
       default: 'Draft',
       index: true,
     },
+    scheduledDate: {
+      type: Date,
+      default: Date.now,
+      index: true,
+    },
     notes: {
       type: String,
       default: '',

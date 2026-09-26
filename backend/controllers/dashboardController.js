@@ -9,24 +9,64 @@ const {
   StockLedger,
 } = require('../../database/models');
 
-// @desc    Get dashboard KPIs and operational summaries
-// @route   GET /api/dashboard/kpis
+// @desc    Get dashboard metrics, card counters, and operational statistics
+// @route   GET /api/dashboard/kpis or GET /api/dashboard/statistics
 const getDashboardKPIs = asyncHandler(async (req, res) => {
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
   const [
-    products,
-    warehousesCount,
-    pendingReceipts,
-    pendingDeliveries,
+    // Receipt metrics
+    receiptsToReceive,
+    receiptsLate,
+    receiptsUpcoming,
+    receiptsTotal,
+    // Delivery metrics
+    deliveriesToDeliver,
+    deliveriesLate,
+    deliveriesWaiting,
+    deliveriesUpcoming,
+    deliveriesTotal,
+    // Transfers & Adjustments
     pendingTransfers,
     pendingAdjustments,
+    // Master data
+    products,
+    warehousesCount,
     recentLedger,
   ] = await Promise.all([
-    Product.find().select('name sku category totalStock minReorderLevel'),
+    // Receipts
+    Receipt.countDocuments({ status: { $nin: ['Done', 'Canceled'] } }),
+    Receipt.countDocuments({
+      status: { $nin: ['Done', 'Canceled'] },
+      scheduledDate: { $lt: startOfToday },
+    }),
+    Receipt.countDocuments({
+      status: { $nin: ['Done', 'Canceled'] },
+      scheduledDate: { $gte: startOfToday },
+    }),
+    Receipt.countDocuments(),
+
+    // Deliveries
+    DeliveryOrder.countDocuments({ status: { $nin: ['Done', 'Canceled'] } }),
+    DeliveryOrder.countDocuments({
+      status: { $nin: ['Done', 'Canceled'] },
+      scheduledDate: { $lt: startOfToday },
+    }),
+    DeliveryOrder.countDocuments({ status: 'Waiting' }),
+    DeliveryOrder.countDocuments({
+      status: { $nin: ['Done', 'Canceled'] },
+      scheduledDate: { $gte: startOfToday },
+    }),
+    DeliveryOrder.countDocuments(),
+
+    // Operations
+    InternalTransfer.countDocuments({ status: { $nin: ['Done', 'Canceled'] } }),
+    StockAdjustment.countDocuments({ status: { $nin: ['Done', 'Canceled'] } }),
+
+    // Stock stats
+    Product.find().select('name sku category totalStock minReorderLevel costPrice'),
     Warehouse.countDocuments(),
-    Receipt.countDocuments({ status: { $ne: 'Done' } }),
-    DeliveryOrder.countDocuments({ status: { $ne: 'Done' } }),
-    InternalTransfer.countDocuments({ status: { $ne: 'Done' } }),
-    StockAdjustment.countDocuments({ status: { $ne: 'Done' } }),
     StockLedger.find().sort({ timestamp: -1 }).limit(10),
   ]);
 
@@ -43,17 +83,68 @@ const getDashboardKPIs = asyncHandler(async (req, res) => {
   res.status(200).json({
     success: true,
     data: {
-      totalProductsCount: products.length,
-      totalItemsInStock,
-      lowStockCount: lowStockProducts.length,
-      lowStockProducts,
-      warehousesCount,
-      operations: {
-        pendingReceipts,
-        pendingDeliveries,
+      // 1. Dashboard Cards (matching wireframe)
+      cards: {
+        receipt: {
+          title: 'Receipt',
+          toReceive: receiptsToReceive,
+          late: receiptsLate,
+          operations: receiptsToReceive,
+          upcomingOperations: receiptsUpcoming,
+          totalAllTime: receiptsTotal,
+          rules: {
+            late: "schedule date < today's date",
+            operations: "schedule date > today's date",
+          },
+        },
+        delivery: {
+          title: 'Delivery',
+          toDeliver: deliveriesToDeliver,
+          late: deliveriesLate,
+          waiting: deliveriesWaiting,
+          operations: deliveriesToDeliver,
+          upcomingOperations: deliveriesUpcoming,
+          totalAllTime: deliveriesTotal,
+          rules: {
+            late: "schedule date < today's date",
+            waiting: "Waiting for the stocks",
+            operations: "schedule date > today's date",
+          },
+        },
+      },
+
+      // 2. Navigation Architecture
+      navigationStructure: {
+        Dashboard: 'Dashboard to display the current statistics',
+        Operations: {
+          submenu: ['Receipt', 'Delivery', 'Adjustment'],
+          description: 'Operations submenu: 1. Receipt, 2. Delivery, 3. Adjustment',
+        },
+        Stock: 'List the available stock (Products, On Hand, Free to Use, Unit Cost)',
+        MoveHistory: 'Display the history of In/Out stocks (List & Kanban)',
+        Settings: {
+          submenu: ['Warehouse', 'Locations'],
+          description: '1. Warehouse, 2. Locations',
+        },
+      },
+
+      // 3. Operational Overview
+      operationsSummary: {
+        pendingReceipts: receiptsToReceive,
+        pendingDeliveries: deliveriesToDeliver,
         pendingTransfers,
         pendingAdjustments,
       },
+
+      // 4. Stock Statistics
+      stockStatistics: {
+        totalProductsCount: products.length,
+        totalItemsInStock,
+        lowStockCount: lowStockProducts.length,
+        lowStockProducts,
+        warehousesCount,
+      },
+
       recentActivity: recentLedger,
     },
   });

@@ -304,6 +304,7 @@ async function seedDatabase() {
       warehouse: mainWh._id,
       warehouseName: 'WH',
       status: 'Ready',
+      scheduledDate: new Date(Date.now() + 2 * 24 * 3600 * 1000),
       notes: 'Inbound shipment from Azure Interior.',
       items: [
         {
@@ -315,6 +316,103 @@ async function seedDatabase() {
           quantityReceived: 0,
           unitPrice: 3000,
           destinationLocation: 'Stock1',
+        },
+      ],
+      createdBy: manager._id,
+    });
+
+    // Receipt 3 (Late: scheduledDate in past)
+    const rec3 = await Receipt.create({
+      receiptNumber: 'REC-2026-003',
+      supplierName: 'Titan Fasteners Inc',
+      supplierContact: 'sales@titanfasteners.com',
+      warehouse: mainWh._id,
+      warehouseName: mainWh.name,
+      status: 'Ready',
+      scheduledDate: new Date(Date.now() - 2 * 24 * 3600 * 1000), // Late!
+      notes: 'Delayed hardware shipment awaiting customs clearance.',
+      items: [
+        {
+          product: boltProduct._id,
+          productName: boltProduct.name,
+          sku: boltProduct.sku,
+          uom: 'box',
+          quantityExpected: 50,
+          quantityReceived: 0,
+          unitPrice: 12.0,
+          destinationLocation: 'Receiving Dock',
+        },
+      ],
+      createdBy: manager._id,
+    });
+
+    // Receipt 4 (Waiting for dock assignment)
+    const rec4 = await Receipt.create({
+      receiptNumber: 'REC-2026-004',
+      supplierName: 'Apex Steel Industries Ltd',
+      warehouse: prodWh._id,
+      warehouseName: prodWh.name,
+      status: 'Waiting',
+      scheduledDate: new Date(Date.now() + 1 * 24 * 3600 * 1000),
+      notes: 'Scheduled delivery for factory rebar reinforcement.',
+      items: [
+        {
+          product: steelProduct._id,
+          productName: steelProduct.name,
+          sku: steelProduct.sku,
+          uom: 'kg',
+          quantityExpected: 60,
+          quantityReceived: 0,
+          unitPrice: 4.5,
+          destinationLocation: 'Production Floor',
+        },
+      ],
+      createdBy: manager._id,
+    });
+
+    // Receipt 5 (Draft)
+    const rec5 = await Receipt.create({
+      receiptNumber: 'REC-2026-005',
+      supplierName: 'Pacific Eco Packaging',
+      warehouse: mainWh._id,
+      warehouseName: mainWh.name,
+      status: 'Draft',
+      scheduledDate: new Date(Date.now() + 3 * 24 * 3600 * 1000),
+      items: [
+        {
+          product: deskProduct._id,
+          productName: deskProduct.name,
+          sku: deskProduct.sku,
+          uom: 'pcs',
+          quantityExpected: 20,
+          quantityReceived: 0,
+          unitPrice: 3000,
+          destinationLocation: 'Stock1',
+        },
+      ],
+      createdBy: manager._id,
+    });
+
+    // Receipt 6 (Done)
+    const rec6 = await Receipt.create({
+      receiptNumber: 'REC-2026-006',
+      supplierName: 'Modern Office Systems',
+      warehouse: mainWh._id,
+      warehouseName: mainWh.name,
+      status: 'Done',
+      scheduledDate: new Date(Date.now() - 4 * 24 * 3600 * 1000),
+      validatedAt: new Date(Date.now() - 4 * 24 * 3600 * 1000),
+      validatedBy: manager._id,
+      items: [
+        {
+          product: chairProduct._id,
+          productName: chairProduct.name,
+          sku: chairProduct.sku,
+          uom: 'pcs',
+          quantityExpected: 15,
+          quantityReceived: 15,
+          unitPrice: 85,
+          destinationLocation: 'Rack A1',
         },
       ],
       createdBy: manager._id,
@@ -434,6 +532,103 @@ async function seedDatabase() {
         },
       ],
       notes: 'Azure Interior commercial dispatch.',
+      createdBy: manager._id,
+    });
+
+    // Delivery Order 3 (Late: scheduledDate in past)
+    const del3 = await DeliveryOrder.create({
+      orderNumber: 'DEL-2026-003',
+      customerName: 'Metro Urban Contractors',
+      shippingAddress: '742 Evergreen Terrace, Springfield',
+      warehouse: mainWh._id,
+      warehouseName: mainWh.name,
+      status: 'Ready',
+      scheduledDate: new Date(Date.now() - 2 * 24 * 3600 * 1000), // Late!
+      items: [
+        {
+          product: steelProduct._id,
+          productName: steelProduct.name,
+          sku: steelProduct.sku,
+          uom: 'kg',
+          quantityOrdered: 10,
+          quantityPicked: 0,
+          quantityPacked: 0,
+          sourceLocation: 'Receiving Dock',
+        },
+      ],
+      createdBy: manager._id,
+    });
+
+    // Delivery Order 4 (Waiting for stocks)
+    const del4 = await DeliveryOrder.create({
+      orderNumber: 'DEL-2026-004',
+      customerName: 'FinTech Hub Offices',
+      shippingAddress: '500 Tech Plaza, Floor 12, New York, NY',
+      warehouse: mainWh._id,
+      warehouseName: mainWh.name,
+      status: 'Waiting', // Waiting for stock!
+      scheduledDate: new Date(Date.now() + 1 * 24 * 3600 * 1000),
+      items: [
+        {
+          product: chairProduct._id,
+          productName: chairProduct.name,
+          sku: chairProduct.sku,
+          uom: 'pcs',
+          quantityOrdered: 8,
+          quantityPicked: 0,
+          quantityPacked: 0,
+          sourceLocation: 'Rack A1',
+        },
+      ],
+      createdBy: manager._id,
+    });
+
+    // Delivery Order 5 (Waiting for stocks)
+    const del5 = await DeliveryOrder.create({
+      orderNumber: 'DEL-2026-005',
+      customerName: 'OmniCorp Logistics',
+      shippingAddress: '100 Industrial Blvd',
+      warehouse: mainWh._id,
+      warehouseName: mainWh.name,
+      status: 'Waiting', // Waiting for stock!
+      scheduledDate: new Date(Date.now() + 2 * 24 * 3600 * 1000),
+      items: [
+        {
+          product: boltProduct._id,
+          productName: boltProduct.name,
+          sku: boltProduct.sku,
+          uom: 'box',
+          quantityOrdered: 30,
+          quantityPicked: 0,
+          quantityPacked: 0,
+          sourceLocation: 'Shelf B1',
+        },
+      ],
+      createdBy: manager._id,
+    });
+
+    // Delivery Order 6 (Done)
+    const del6 = await DeliveryOrder.create({
+      orderNumber: 'DEL-2026-006',
+      customerName: 'Apex Architecture',
+      warehouse: mainWh._id,
+      warehouseName: mainWh.name,
+      status: 'Done',
+      scheduledDate: new Date(Date.now() - 5 * 24 * 3600 * 1000),
+      validatedAt: new Date(Date.now() - 5 * 24 * 3600 * 1000),
+      validatedBy: manager._id,
+      items: [
+        {
+          product: deskProduct._id,
+          productName: deskProduct.name,
+          sku: deskProduct.sku,
+          uom: 'pcs',
+          quantityOrdered: 5,
+          quantityPicked: 5,
+          quantityPacked: 5,
+          sourceLocation: 'Main Storage',
+        },
+      ],
       createdBy: manager._id,
     });
 

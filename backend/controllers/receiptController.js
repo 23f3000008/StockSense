@@ -2,12 +2,28 @@ const asyncHandler = require('../utils/asyncHandler');
 const { Receipt } = require('../../database/models');
 const { processReceiptValidation } = require('../../database/services/stockService');
 
-// @desc    Get all receipts
+// @desc    Get all receipts (supports filter=late, filter=to-receive, filter=operations)
 // @route   GET /api/receipts
 const getReceipts = asyncHandler(async (req, res) => {
-  const { status } = req.query;
-  const filter = status ? { status } : {};
-  const receipts = await Receipt.find(filter).sort({ createdAt: -1 });
+  const { status, filter: queryFilter } = req.query;
+  const filter = {};
+
+  if (status) filter.status = status;
+
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  if (queryFilter === 'late') {
+    filter.status = { $nin: ['Done', 'Canceled'] };
+    filter.scheduledDate = { $lt: startOfToday };
+  } else if (queryFilter === 'to-receive') {
+    filter.status = { $nin: ['Done', 'Canceled'] };
+  } else if (queryFilter === 'operations') {
+    filter.status = { $nin: ['Done', 'Canceled'] };
+    filter.scheduledDate = { $gte: startOfToday };
+  }
+
+  const receipts = await Receipt.find(filter).sort({ scheduledDate: 1, createdAt: -1 });
   res.status(200).json({ success: true, count: receipts.length, data: receipts });
 });
 

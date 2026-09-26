@@ -77,6 +77,11 @@ const deliveryOrderSchema = new mongoose.Schema(
       default: 'Draft',
       index: true,
     },
+    scheduledDate: {
+      type: Date,
+      default: Date.now,
+      index: true,
+    },
     pickingStatus: {
       type: String,
       enum: ['Not Picked', 'Partially Picked', 'Fully Picked'],

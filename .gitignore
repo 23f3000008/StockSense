@@ -12,7 +12,7 @@ backend/.env
 database/.env
 !*.env.example
 !**/.env.example
-
+*.png
 # OS generated files
 .DS_Store
 */.DS_Store

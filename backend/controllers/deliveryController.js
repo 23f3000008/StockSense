@@ -2,12 +2,30 @@ const asyncHandler = require('../utils/asyncHandler');
 const { DeliveryOrder } = require('../../database/models');
 const { processDeliveryOrderValidation } = require('../../database/services/stockService');
 
-// @desc    Get all delivery orders
+// @desc    Get all delivery orders (supports filter=late, filter=to-deliver, filter=waiting, filter=operations)
 // @route   GET /api/deliveries
 const getDeliveries = asyncHandler(async (req, res) => {
-  const { status } = req.query;
-  const filter = status ? { status } : {};
-  const deliveries = await DeliveryOrder.find(filter).sort({ createdAt: -1 });
+  const { status, filter: queryFilter } = req.query;
+  const filter = {};
+
+  if (status) filter.status = status;
+
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  if (queryFilter === 'late') {
+    filter.status = { $nin: ['Done', 'Canceled'] };
+    filter.scheduledDate = { $lt: startOfToday };
+  } else if (queryFilter === 'to-deliver') {
+    filter.status = { $in: ['Ready', 'Waiting', 'Draft'] };
+  } else if (queryFilter === 'waiting') {
+    filter.status = 'Waiting';
+  } else if (queryFilter === 'operations') {
+    filter.status = { $nin: ['Done', 'Canceled'] };
+    filter.scheduledDate = { $gte: startOfToday };
+  }
+
+  const deliveries = await DeliveryOrder.find(filter).sort({ scheduledDate: 1, createdAt: -1 });
   res.status(200).json({ success: true, count: deliveries.length, data: deliveries });
 });
 
