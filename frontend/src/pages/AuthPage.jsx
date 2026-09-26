@@ -16,9 +16,9 @@ export default function AuthPage({ onLoginSuccess }) {
   // Modes: 'login', 'signup', 'forgot', 'verify-otp', 'reset-password'
   const [mode, setMode] = useState('login');
 
-  // Login form state
-  const [loginId, setLoginId] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
+  // Login form state (pre-filled for manager)
+  const [loginId, setLoginId] = useState('manager');
+  const [loginPassword, setLoginPassword] = useState('Password123!');
 
   // Sign up form state
   const [signupLoginId, setSignupLoginId] = useState('');
@@ -281,15 +281,6 @@ export default function AuthPage({ onLoginSuccess }) {
               </div>
             </form>
 
-            <div className="auth-credentials-hint">
-              <small>Demo Accounts:</small>
-              <div className="hint-row">
-                <span>Manager: <code>manager</code> / <code>Password123!</code></span>
-              </div>
-              <div className="hint-row">
-                <span>Staff: <code>staffuser</code> / <code>Password123!</code></span>
-              </div>
-            </div>
           </div>
         )}
 
