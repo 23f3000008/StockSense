@@ -1,0 +1,11 @@
+services:
+  mongo:
+    image: mongo:7
+    container_name: stocksense-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - stocksense_mongo:/data/db
+volumes:
+  stocksense_mongo:
