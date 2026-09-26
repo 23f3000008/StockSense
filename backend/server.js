@@ -1,3 +1,59 @@
-import 'dotenv/config'; import express from 'express'; import cors from 'cors'; import morgan from 'morgan'; import {connectDB} from './src/config/db.js'; import auth from './src/routes/auth.js'; import products from './src/routes/products.js'; import warehouses from './src/routes/warehouses.js'; import operations from './src/routes/operations.js'; import dashboard from './src/routes/dashboard.js';
-const app=express();app.use(cors({origin:process.env.CLIENT_URL||'http://localhost:5173'}));app.use(express.json());app.use(morgan('dev'));app.get('/api/health',(req,res)=>res.json({ok:true,app:'StockSense'}));app.use('/api/auth',auth);app.use('/api/products',products);app.use('/api/warehouses',warehouses);app.use('/api/operations',operations);app.use('/api/dashboard',dashboard);app.use((err,req,res,next)=>res.status(500).json({message:err.message||'Server error'}));
-connectDB().then(()=>app.listen(process.env.PORT||5000,()=>console.log(`API running on http://localhost:${process.env.PORT||5000}`))).catch(e=>{console.error(e);process.exit(1)});
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const cookieParser = require('cookie-parser');
+const morgan = require('morgan');
+const connectDB = require('./config/db');
+
+// Route Handlers
+const authRoutes = require('./routes/authRoutes');
+const productRoutes = require('./routes/productRoutes');
+const inventoryRoutes = require('./routes/inventoryRoutes');
+const receiptRoutes = require('./routes/receiptRoutes');
+const deliveryRoutes = require('./routes/deliveryRoutes');
+const transferRoutes = require('./routes/transferRoutes');
+const adjustmentRoutes = require('./routes/adjustmentRoutes');
+const dashboardRoutes = require('./routes/dashboardRoutes');
+const ledgerRoutes = require('./routes/ledgerRoutes');
+
+const { notFound, errorHandler } = require('./middleware/errorMiddleware');
+
+connectDB();
+
+const app = express();
+
+const clientOrigin = process.env.CLIENT_URL || 'http://localhost:5173';
+app.use(cors({ origin: clientOrigin, credentials: true }));
+app.use(express.json());
+app.use(cookieParser());
+if (process.env.NODE_ENV !== 'test') {
+  app.use(morgan('dev'));
+}
+
+// StockSense Modular REST API Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/products', productRoutes);
+app.use('/api/inventory', inventoryRoutes);
+app.use('/api/receipts', receiptRoutes);
+app.use('/api/deliveries', deliveryRoutes);
+app.use('/api/transfers', transferRoutes);
+app.use('/api/adjustments', adjustmentRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/ledger', ledgerRoutes);
+
+// Health Check
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    service: 'StockSense Backend API',
+    timestamp: new Date().toISOString(),
+  });
+});
+
+app.use(notFound);
+app.use(errorHandler);
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`🚀 StockSense Backend Server running on port ${PORT}`);
+});
