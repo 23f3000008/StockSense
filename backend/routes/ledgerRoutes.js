@@ -1,8 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const { getStockLedger } = require('../controllers/ledgerController');
+const { getMoveHistory, createMove } = require('../controllers/ledgerController');
 const { protect } = require('../middleware/authMiddleware');
 
-router.get('/', protect, getStockLedger);
+router.route('/')
+  .get(protect, getMoveHistory)
+  .post(protect, createMove);
 
 module.exports = router;

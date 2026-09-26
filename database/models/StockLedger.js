@@ -17,6 +17,24 @@ const stockLedgerSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       default: null,
     },
+    contact: {
+      type: String,
+      default: '',
+      trim: true,
+      index: true,
+    },
+    status: {
+      type: String,
+      enum: ['Draft', 'Waiting', 'Ready', 'Done', 'Canceled'],
+      default: 'Done',
+      index: true,
+    },
+    direction: {
+      type: String,
+      enum: ['IN', 'OUT', 'INTERNAL', 'ADJUSTMENT'],
+      default: 'IN',
+      index: true,
+    },
     product: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Product',

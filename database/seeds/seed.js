@@ -295,26 +295,26 @@ async function seedDatabase() {
       createdBy: manager._id,
     });
 
-    // Receipt 2 (Ready/Pending): Incoming Office Chairs
+    // Receipt 2 (Ready/Pending): WH/IN/0001 matching wireframe
     const rec2 = await Receipt.create({
-      receiptNumber: 'REC-2026-002',
-      supplierName: 'Global Seating Solutions',
-      supplierContact: 'dispatch@globalseating.com',
+      receiptNumber: 'WH/IN/0001',
+      supplierName: 'Azure Interior',
+      supplierContact: 'orders@azureinterior.com',
       purchaseOrderRef: 'PO-99445',
       warehouse: mainWh._id,
-      warehouseName: mainWh.name,
+      warehouseName: 'WH',
       status: 'Ready',
-      notes: 'Awaiting truck arrival at dock 2.',
+      notes: 'Inbound shipment from Azure Interior.',
       items: [
         {
-          product: chairProduct._id,
-          productName: chairProduct.name,
-          sku: chairProduct.sku,
+          product: deskProduct._id,
+          productName: deskProduct.name,
+          sku: deskProduct.sku,
           uom: 'pcs',
-          quantityExpected: 40,
-          quantityReceived: 40,
-          unitPrice: 85.0,
-          destinationLocation: 'Rack A1',
+          quantityExpected: 50,
+          quantityReceived: 0,
+          unitPrice: 3000,
+          destinationLocation: 'Stock1',
         },
       ],
       createdBy: manager._id,
@@ -399,29 +399,19 @@ async function seedDatabase() {
       createdBy: manager._id,
     });
 
-    // Delivery Order 2 (Ready/Pending):
+    // Delivery Order 2 (Ready/Pending): WH/OUT/0002 matching wireframe
     const del2 = await DeliveryOrder.create({
-      orderNumber: 'DEL-2026-002',
-      customerName: 'FinTech Hub Offices',
-      shippingAddress: '500 Tech Plaza, Floor 12, New York, NY',
+      orderNumber: 'WH/OUT/0002',
+      customerName: 'Azure Interior',
+      shippingAddress: 'Azure Interior Showroom, Design District',
       salesOrderRef: 'SO-10850',
       warehouse: mainWh._id,
-      warehouseName: mainWh.name,
+      warehouseName: 'WH',
       status: 'Ready',
-      pickingStatus: 'Fully Picked',
+      pickingStatus: 'Partially Picked',
       packingStatus: 'Not Packed',
       carrier: 'FedEx Freight',
       items: [
-        {
-          product: chairProduct._id,
-          productName: chairProduct.name,
-          sku: chairProduct.sku,
-          uom: 'pcs',
-          quantityOrdered: 6,
-          quantityPicked: 6,
-          quantityPacked: 0,
-          sourceLocation: 'Rack A1',
-        },
         {
           product: deskProduct._id,
           productName: deskProduct.name,
@@ -430,10 +420,20 @@ async function seedDatabase() {
           quantityOrdered: 5,
           quantityPicked: 0,
           quantityPacked: 0,
-          sourceLocation: 'Main Storage',
+          sourceLocation: 'Stock1',
+        },
+        {
+          product: tableProduct._id,
+          productName: tableProduct.name,
+          sku: tableProduct.sku,
+          uom: 'pcs',
+          quantityOrdered: 10,
+          quantityPicked: 0,
+          quantityPacked: 0,
+          sourceLocation: 'Stock2',
         },
       ],
-      notes: 'Pack with protective corner guards.',
+      notes: 'Azure Interior commercial dispatch.',
       createdBy: manager._id,
     });
 

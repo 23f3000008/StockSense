@@ -41,6 +41,7 @@ app.use('/api/transfers', transferRoutes);
 app.use('/api/adjustments', adjustmentRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/ledger', ledgerRoutes);
+app.use('/api/moves', ledgerRoutes);
 
 // Health Check
 app.get('/api/health', (req, res) => {
