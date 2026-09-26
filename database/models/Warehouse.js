@@ -8,9 +8,11 @@ const locationSchema = new mongoose.Schema({
   },
   code: {
     type: String,
-    required: [true, 'Location code is required (e.g. LOC-A1, PROD-FLR)'],
     trim: true,
     uppercase: true,
+    default: function () {
+      return (this.name || 'LOC').toUpperCase().replace(/[^A-Z0-9]/g, '-').slice(0, 12);
+    },
   },
   type: {
     type: String,
@@ -48,11 +50,8 @@ const warehouseSchema = new mongoose.Schema(
       index: true,
     },
     address: {
-      street: { type: String, default: '' },
-      city: { type: String, default: '' },
-      state: { type: String, default: '' },
-      country: { type: String, default: '' },
-      zipCode: { type: String, default: '' },
+      type: mongoose.Schema.Types.Mixed,
+      default: '',
     },
     contactPerson: {
       type: String,
@@ -68,7 +67,30 @@ const warehouseSchema = new mongoose.Schema(
       default: true,
     },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  }
 );
+
+// Virtual alias: shortCode -> code
+warehouseSchema.virtual('shortCode').get(function () {
+  return this.code;
+});
+
+// Virtual helper: formattedAddress
+warehouseSchema.virtual('formattedAddress').get(function () {
+  if (!this.address) return '';
+  if (typeof this.address === 'string') return this.address;
+  const parts = [
+    this.address.street,
+    this.address.city,
+    this.address.state,
+    this.address.country,
+    this.address.zipCode,
+  ].filter(Boolean);
+  return parts.join(', ');
+});
 
 module.exports = mongoose.model('Warehouse', warehouseSchema);
